@@ -225,7 +225,6 @@ class BJDD:
         """
         inferenceMode:
           - 1/2: Bad Pixel Correction
-          - 3:   Demosaic (참고: Demosaicer 쪽에서 attentionNet/PIPNet을 사용할 계획이면 별도 경로)
         """
         if not validation:
             self.modelLoad()
