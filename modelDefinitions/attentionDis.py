@@ -4,8 +4,9 @@ import torch
 from torchsummary import summary
 import torchvision.models as models
 from torchvision.models import vgg19
-from modelDefinitions.basicBlocks import * # 이 줄은 그대로 둡니다.
+from modelDefinitions.basicBlocks import *  # 이 줄은 그대로 둡니다.
 import torch.nn.init as init
+
 def swish(x):
     return x * torch.sigmoid(x)
 
@@ -29,8 +30,8 @@ class attentiomDiscriminator(nn.Module):
         self.conv8 = nn.Conv2d(512, 512, 3, stride=2, padding=1)
         self.bn8 = nn.BatchNorm2d(512)
 
-        # Replaced original paper FC layers with FCN
-        self.conv9 = nn.Conv2d(512, 1, 1, stride=1, padding=1)
+        # FC 대신 FCN: 로짓을 바로 낸 뒤 전역 평균 풀링 → 스칼라
+        self.conv9 = nn.Conv2d(512, 1, 1, stride=1, padding=0)  # padding=0 로 정리
 
     def forward(self, x):
         x = swish(self.conv1(x))
@@ -44,8 +45,8 @@ class attentiomDiscriminator(nn.Module):
         x = swish(self.bn8(self.conv8(x)))
 
         x = self.conv9(x)
-        return torch.sigmoid(F.avg_pool2d(x, x.size()[2:])).view(x.size()[0], -1)
-
+        # BCEWithLogitsLoss 사용 → 시그모이드 제거, 로짓 그대로 반환
+        return F.avg_pool2d(x, x.size()[2:]).view(x.size()[0], -1)
 
 class Discriminator(nn.Module):
     def __init__(self, input_shape):
@@ -78,6 +79,5 @@ class Discriminator(nn.Module):
         self.model = nn.Sequential(*layers)
 
     def forward(self, img):
+        # 시그모이드 없이 로짓 반환 (사용 시 BCEWithLogitsLoss와 함께 사용할 것)
         return self.model(img)
-#net = enhanceGenerator(bn=False)
-#summary(net, input_size = (3, 128, 128))
