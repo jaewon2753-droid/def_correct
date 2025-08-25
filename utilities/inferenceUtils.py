@@ -38,7 +38,7 @@ class AddGaussianNoise(object):
 
 class inference():
     def __init__(self, gridSize, inputRootDir, outputRootDir, modelName, validation=None, inferenceMode=2):
-        self.gridSize = gridSize # Demosaic 모드 구분을 위해 사용
+        self.gridSize = gridSize
         self.inputRootDir = inputRootDir
         self.outputRootDir = outputRootDir
         self.modelName = modelName
@@ -49,22 +49,17 @@ class inference():
     def inputForInference(self, imagePath, noiseLevel):
         source_image_pil = Image.open(imagePath).convert("RGB")
 
-        # --- Demosaic 모드 (gridSize == -1) 처리 ---
-        if self.gridSize == -1:
-            print("Mode 3 (Demosaicing): Treating input as clean Quad Bayer.")
-            img = source_image_pil
         # --- BP Correction 모드 처리 ---
+        if self.inferenceMode == 1:
+            print("Mode 1: Treating input as already defective.")
+            img = source_image_pil
+        elif self.inferenceMode == 2:
+            print("Mode 2: Applying bad pixels to clean input.")
+            source_image_np = np.array(source_image_pil)
+            corrupted_image_np = generate_bad_pixels(source_image_np)
+            img = Image.fromarray(corrupted_image_np)
         else:
-            if self.inferenceMode == 1:
-                print("Mode 1: Treating input as already defective.")
-                img = source_image_pil
-            elif self.inferenceMode == 2:
-                print("Mode 2: Applying bad pixels to clean input.")
-                source_image_np = np.array(source_image_pil)
-                corrupted_image_np = generate_bad_pixels(source_image_np)
-                img = Image.fromarray(corrupted_image_np)
-            else:
-                raise ValueError(f"Invalid inferenceMode: {self.inferenceMode}")
+            raise ValueError(f"Invalid inferenceMode: {self.inferenceMode}")
 
         # 텐서 변환 및 정규화
         transform = transforms.Compose([
