@@ -24,13 +24,10 @@ def mainParser(args=sys.argv[1:]):
     parser.add_argument("-n", "--dataSamples", type=int, help="Specify number of images to be used for training/sampling")
     parser.add_argument("-u", "--manualUpdate", action='store_true', help="Manually update the configuration (entity)")
     parser.add_argument("-ms", "--modelSummary", action='store_true', help="Show the summary of models and configurations")
-    parser.add_argument("--mode", type=int, default=2, choices=[1, 2, 3],
+    parser.add_argument("--mode", type=int, default=2, choices=[1, 2],
                         help="Set inference mode: 1 (Defect Correction on defective input), "
-                             "2 (Defect Correction on clean input), 3 (Demosaicing)")
+                             "2 (Defect Correction on clean input)")
 
-    # 2. Demosaicing 모델의 가중치 선택 옵션 추가
-    parser.add_argument("--demosaic_weight", type=str, default="original", choices=["original", "custom"],
-                        help="Select demosaicing weight: 'original' for BJDD pre-trained, 'custom' for your own.")    
     options = parser.parse_args(args)
 
     #if options.inference and (options.sourceDir is None ):
