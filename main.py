@@ -3,8 +3,6 @@ from utilities.parserUtils import *
 from utilities.customUtils import *
 from utilities.aestheticUtils import *
 from mainModule.BJDD import *
-# 새로 만든 Demosaicer 클래스를 임포트합니다.
-from mainModule.Demosaicer import Demosaicer
 import os
 # 현재 파일의 위치를 기준으로 프로젝트 최상위 폴더를 파이썬 경로에 추가
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
@@ -55,16 +53,6 @@ if __name__ == "__main__":
                 testImagesPath=options.sourceDir,
                 outputDir=options.resultDir,
                 inferenceMode=options.mode
-            )
-        elif options.mode == 3:
-            # Mode 3: Demosaicing
-            print(f"--- Running Demosaicing (Mode 3) ---")
-            print(f"Using Demosaic Weight: {options.demosaic_weight}")
-            demosaicer = Demosaicer(config)
-            demosaicer.run_demosaic(
-                input_dir=options.sourceDir,
-                output_dir=options.resultDir,
-                weight_type=options.demosaic_weight
             )
 
     elif options.overFitTest:
