@@ -19,7 +19,7 @@ from dataTools.customDataloader import *
 from utilities.inferenceUtils import *
 from utilities.aestheticUtils import *
 from loss.pytorch_msssim import *
-from loss.colorLoss import *
+from loss.colorLoss import ColorLoss 
 from loss.percetualLoss import *
 
 # ========================================================== #
@@ -130,7 +130,7 @@ class BJDD:
         # Perceptual Loss: 이미지의 전반적인 질감과 특징을 비슷하게 만듦
         featureLoss = regularizedFeatureLoss().to(self.device)
         # Color Loss: 색감을 비슷하게 만듦
-        colorLoss = deltaEColorLoss(normalize=True).to(self.device)
+        colorLoss = ColorLoss().to(self.device)
         # Adversarial Loss: GAN 학습을 위함
         adversarialLoss = nn.BCELoss().to(self.device)
 
@@ -286,5 +286,6 @@ class BJDD:
         self.optimizerG.load_state_dict(previousWeight['optimizerG'])
         self.optimizerD.load_state_dict(previousWeight['optimizerD'])
         self.startSteps = int(previousWeight['step'])
+
 
         customPrint(Fore.YELLOW + "Weight loaded successfully", textWidth=self.barLen)
