@@ -1,56 +1,72 @@
+import sys
 from utilities.parserUtils import *
 from utilities.customUtils import *
 from utilities.aestheticUtils import *
-#from dataTools.processDataset import *
-#from dataTools.patchExtractor import *
 from mainModule.BJDD import *
+# 새로 만든 Demosaicer 클래스를 임포트합니다.
+from mainModule.Demosaicer import Demosaicer
 
 if __name__ == "__main__":
 
-    # Parsing Options
+    # 1. 사용자가 입력한 명령어 옵션을 분석합니다.
     options = mainParser(sys.argv[1:])
     if len(sys.argv) == 1:
         customPrint("Invalid option(s) selected! To get help, execute script with -h flag.")
         exit()
     
-    # Reading Model Configuration
+    # 2. config.json 설정 파일을 읽어옵니다.
     if options.conf:
         configCreator()
-
-    # Loading Configuration
     config = configReader()
   
-    # Taking action as per received options
+    # 3. 옵션에 따라 config 파일 내용을 동적으로 업데이트합니다.
     if options.epoch:
         config=updateConfig(entity='epoch', value=options.epoch)
     if options.batch:
         config=updateConfig(entity='batchSize', value=options.batch)
     if options.manualUpdate:
         config=manualUpdateEntity()
-    if options.modelSummary:
-        BJDD(config).modelSummary()
-    if options.train:
-        BJDD(config).modelTraining(dataSamples=options.dataSamples)
-    if options.retrain:
-        BJDD(config).modelTraining(resumeTraning=True, dataSamples=options.dataSamples) 
-    if options.inference:
-        noiseSigmaSet = None
-        if options.noiseSigma:
-            noiseSigmaSet = options.noiseSigma.split(',')
-            noiseSigmaSet = list(map(int, noiseSigmaSet))
-        BJDD(config).modelInference(testImagesPath=options.sourceDir, outputDir=options.resultDir, noiseSet=noiseSigmaSet)
-    if options.overFitTest:
-        BJDD(config).modelTraining(overFitTest=True)
-    #if options.dataSampling:
-    #    datasetSampler(config, options.sourceDir, options.resultDir, options.gridSize, options.dataSamples).samplingImages()
-    #if options.resumeDataSampling:
-    #    datasetSampler(config, options.sourceDir, options.resultDir, options.gridSize, options.dataSamples).resumeSampling()
-    #if options.patch:
-    #    patch = patchExtract(config, options.sourceDir, options.resultDir)
-    #    patch()
-    
-        
-        
-        
-            
 
+    # 4. 명령어 옵션에 따라 적절한 작업을 수행합니다.
+    if options.modelSummary:
+        # --- 모델 요약 정보 출력 ---
+        BJDD(config).modelSummary()
+
+    elif options.train or options.retrain:
+        # --- 학습 모드 ---
+        # -ts 또는 -tr 옵션이 주어지면, BJDD 클래스의 modelTraining 함수를 실행합니다.
+        # 이 부분은 Bad Pixel Correction 모델을 학습시키는 데 사용됩니다.
+        is_resume = options.retrain
+        BJDD(config).modelTraining(resumeTraning=is_resume, dataSamples=options.dataSamples)
+
+    elif options.inference:
+        # --- 추론 모드 ---
+        # -i 옵션이 주어지면, --mode 값에 따라 다른 작업을 수행합니다.
+        if options.sourceDir is None:
+             print("Error: Inference mode requires a source directory. Please specify with -s option.")
+             exit()
+
+        if options.mode == 1 or options.mode == 2:
+            # Mode 1, 2: Bad Pixel Correction
+            print(f"--- Running Bad Pixel Correction (Mode {options.mode}) ---")
+            BJDD(config).modelInference(
+                testImagesPath=options.sourceDir,
+                outputDir=options.resultDir,
+                inferenceMode=options.mode
+            )
+        elif options.mode == 3:
+            # Mode 3: Demosaicing
+            print(f"--- Running Demosaicing (Mode 3) ---")
+            print(f"Using Demosaic Weight: {options.demosaic_weight}")
+            demosaicer = Demosaicer(config)
+            demosaicer.run_demosaic(
+                input_dir=options.sourceDir,
+                output_dir=options.resultDir,
+                weight_type=options.demosaic_weight
+            )
+
+    elif options.overFitTest:
+        # --- 과적합 테스트 모드 ---
+        BJDD(config).modelTraining(overFitTest=True)
+    
+    # (다른 옵션들도 필요에 따라 추가할 수 있습니다.)
