@@ -19,7 +19,7 @@ from dataTools.customDataloader import *
 from utilities.inferenceUtils import *
 from utilities.aestheticUtils import *
 from loss.pytorch_msssim import *
-from loss.colorLoss import ColorLoss 
+from loss.colorLoss import ColorLoss
 from loss.percetualLoss import *
 
 # ========================================================== #
@@ -224,7 +224,7 @@ class BJDD:
         customPrint(Fore.YELLOW + "Training Completed Successfully!", textWidth=self.barLen)
 
     def modelInference(self, testImagesPath=None, outputDir=None, resize=None, validation=None, noiseSet=None,
-                       steps=None):
+                       steps=None, inferenceMode=2): # <-- inferenceMode 기본값 추가
         if not validation:
             self.modelLoad()
             print("\nInferencing on pretrained weights.")
@@ -237,7 +237,7 @@ class BJDD:
             self.resultDir = outputDir
 
         modelInference = inference(gridSize=0, inputRootDir=self.testImagesPath, outputRootDir=self.resultDir,
-                                   modelName=self.modelName, validation=validation)
+                                   modelName=self.modelName, validation=validation, inferenceMode=inferenceMode) # <-- inferenceMode 전달
 
         testImageList = modelInference.testingSetProcessor()
         with torch.no_grad():
