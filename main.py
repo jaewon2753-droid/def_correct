@@ -5,7 +5,9 @@ from utilities.aestheticUtils import *
 from mainModule.BJDD import *
 # 새로 만든 Demosaicer 클래스를 임포트합니다.
 from mainModule.Demosaicer import Demosaicer
-
+import os
+# 현재 파일의 위치를 기준으로 프로젝트 최상위 폴더를 파이썬 경로에 추가
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 if __name__ == "__main__":
 
     # 1. 사용자가 입력한 명령어 옵션을 분석합니다.
