@@ -1,18 +1,25 @@
+# mainModule/Demosaicer.py
+
 import torch
 import os
 from utilities.customUtils import *
-from utilities.inferenceUtils import inference  # 재사용
-from modelDefinitions.unet_transformer_gen import UNetTransformer  # UNet 기반으로 통일
+from utilities.inferenceUtils import inference
+# ========================================================== #
+# ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 핵심 수정 사항 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ #
+# ---------------------------------------------------------- #
+# UNetTransformer 대신, Demosaicing을 위한 attentionNet 모델을
+# attentionGen_bjdd.py 파일에서 정확하게 불러옵니다.
+# ========================================================== #
+from modelDefinitions.attentionGen_bjdd import attentionNet
 
 class Demosaicer:
     def __init__(self, config):
         self.config = config
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        # attentionNet 대신 UNetTransformer 사용
-        self.model = UNetTransformer(n_channels=3, n_classes=3).to(self.device)
+        # 모델을 attentionNet으로 올바르게 수정합니다.
+        self.model = attentionNet().to(self.device)
 
     def load_demosaic_weights(self, weight_type):
-        # 디모자이킹 가중치 경로를 설정합니다.
         weight_dir = "./demosaic_weights/"
         if weight_type == "original":
             weight_path = os.path.join(weight_dir, "original_bjdd.pth")
@@ -25,26 +32,29 @@ class Demosaicer:
         if not os.path.exists(weight_path):
             raise FileNotFoundError(f"Weight file not found: {weight_path}")
 
-        # BJDD에서 저장된 다양한 키를 모두 수용 (stateDictEG 또는 stateDictG)
+        # BJDD 모델은 stateDictEG 또는 stateDictG 키를 사용하므로, 둘 다 확인하여 불러옵니다.
         checkpoint = torch.load(weight_path, map_location=self.device)
-        sd = checkpoint.get('stateDictEG') or checkpoint.get('stateDictG') or checkpoint
-        if isinstance(sd, dict):
-            self.model.load_state_dict(sd, strict=False)
+        state_dict = checkpoint.get('stateDictEG') or checkpoint.get('stateDictG')
+
+        if state_dict:
+            # strict=False 옵션은 일부 키가 맞지 않더라도 최대한 불러오도록 허용합니다.
+            self.model.load_state_dict(state_dict, strict=False)
         else:
-            raise KeyError("No compatible state dict found in checkpoint.")
+            # .pth 파일이 가중치만 바로 저장된 경우를 대비
+            self.model.load_state_dict(checkpoint, strict=False)
+
         print("Demosaicing weight loaded successfully.")
 
     def run_demosaic(self, input_dir, output_dir, weight_type):
         self.load_demosaic_weights(weight_type)
-        self.model.eval()
+        self.model.eval() # 추론 모드로 설정
 
-        # inference 유틸을 재사용하되 gridSize=-1 로 디모자이크 모드 표시
         modelInference = inference(
-            gridSize=-1,               # Demosaicing 모드 플래그
+            gridSize=-1,
             inputRootDir=input_dir,
             outputRootDir=output_dir,
             modelName=f"Demosaic_{weight_type}",
-            inferenceMode=3,           # 모드 표시(로깅 목적)
+            inferenceMode=3
         )
 
         testImageList = modelInference.testingSetProcessor()
