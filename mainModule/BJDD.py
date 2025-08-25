@@ -132,7 +132,7 @@ class BJDD:
         # Color Loss: 색감을 비슷하게 만듦
         colorLoss = ColorLoss().to(self.device)
         # Adversarial Loss: GAN 학습을 위함
-        adversarialLoss = nn.BCELoss().to(self.device)
+        adversarialLoss = nn.BCEWithLogitsLoss().to(self.device)
 
         # 데이터 로더 준비
         trainingImageLoader = self.customTrainLoader(overFitTest=overFitTest)
@@ -289,3 +289,4 @@ class BJDD:
 
 
         customPrint(Fore.YELLOW + "Weight loaded successfully", textWidth=self.barLen)
+
