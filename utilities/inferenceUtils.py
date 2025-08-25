@@ -37,44 +37,41 @@ class AddGaussianNoise(object):
 
 
 class inference():
-    def __init__(self, gridSize, inputRootDir, outputRootDir, modelName, resize = None, validation = None ):
+    def __init__(self, gridSize, inputRootDir, outputRootDir, modelName, validation=None, inferenceMode=2):
+        self.gridSize = gridSize # Demosaic 모드 구분을 위해 사용
         self.inputRootDir = inputRootDir
         self.outputRootDir = outputRootDir
         self.modelName = modelName
-        self.resize = resize
         self.validation = validation
         self.unNormalize = UnNormalize()
+        self.inferenceMode = inferenceMode
 
     def inputForInference(self, imagePath, noiseLevel):
-        # ========================================================== #
-        # ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 핵심 수정 사항 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ #
-        # ---------------------------------------------------------- #
-        # 기존: 깨끗한 이미지 로드 -> 약한 노이즈 추가
-        # 변경: 깨끗한 이미지 로드 -> '불량 화소' 알고리즘 적용
-        # ========================================================== #
+        source_image_pil = Image.open(imagePath).convert("RGB")
 
-        # 1. 테스트할 깨끗한 원본 이미지를 불러옵니다.
-        clean_image_pil = Image.open(imagePath).convert("RGB")
-        
-        # 2. Numpy 배열로 변환합니다.
-        clean_image_np = np.array(clean_image_pil)
-        
-        # 3. 학습 때와 동일한 'generate_bad_pixels' 함수를 호출하여
-        #    실시간으로 불량 화소를 적용합니다.
-        corrupted_image_np = generate_bad_pixels(clean_image_np)
-        
-        # 4. 처리된 이미지를 다시 PIL 이미지 형식으로 변환합니다.
-        #    이 손상된 이미지가 이제 모델의 실제 입력이 됩니다.
-        img = Image.fromarray(corrupted_image_np)
+        # --- Demosaic 모드 (gridSize == -1) 처리 ---
+        if self.gridSize == -1:
+            print("Mode 3 (Demosaicing): Treating input as clean Quad Bayer.")
+            img = source_image_pil
+        # --- BP Correction 모드 처리 ---
+        else:
+            if self.inferenceMode == 1:
+                print("Mode 1: Treating input as already defective.")
+                img = source_image_pil
+            elif self.inferenceMode == 2:
+                print("Mode 2: Applying bad pixels to clean input.")
+                source_image_np = np.array(source_image_pil)
+                corrupted_image_np = generate_bad_pixels(source_image_np)
+                img = Image.fromarray(corrupted_image_np)
+            else:
+                raise ValueError(f"Invalid inferenceMode: {self.inferenceMode}")
 
-        # 5. 이미지를 텐서로 변환하고 정규화합니다.
-        #    (AddGaussianNoise는 이제 사실상 의미가 없지만, 호환성을 위해 남겨둡니다.)
-        transform = transforms.Compose([ transforms.ToTensor(),
-                                        transforms.Normalize(normMean, normStd),
-                                        AddGaussianNoise(noiseLevel=noiseLevel)])
-
+        # 텐서 변환 및 정규화
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(normMean, normStd)
+        ])
         testImg = transform(img).unsqueeze(0)
-
         return testImg
 
 
@@ -103,4 +100,5 @@ class inference():
             imgInTargetDir = imageList(t, False)
             testImageList.extend(imgInTargetDir)
             
+
         return testImageList
