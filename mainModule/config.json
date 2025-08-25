@@ -1,0 +1,23 @@
+{
+	"gtPath": "/content/drive/MyDrive/BJDD_CVPR21/testingImages/sampleImages/quad128/quad128/",
+	"targetPath": "/content/drive/MyDrive/BJDD_CVPR21/testingImages/sampleImages/quad128/quad128/",
+	"checkpointPath": "./weights_bp_model_128/",
+	"testImagePath": "./testingImages/",
+	"resultDir": "./modelOutput_bp_model_128/",
+	"logPath": "./logDir_bp_model_128/",
+	"modelName": "BadPixel_UNetTransformer_128",
+	"dataSamples": null,
+	"batchSize": 32,
+	"barLen": "64",
+	"interval": "100",
+	"imageH": "128",
+	"imageW": "128",
+	"inputC": "3",
+	"outputC": "3",
+	"scalingFactor": "1",
+	"binningFactor": 2,
+	"epoch": 50,
+	"learningRate": "0.0005",
+	"adamBeta1": "0.9",
+	"adamBeta2": "0.99"
+}
